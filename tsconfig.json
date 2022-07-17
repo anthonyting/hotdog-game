@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": [
+      "DOM",
+    ],
+    "target": "ESNext",
+  }
+}
