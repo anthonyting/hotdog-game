@@ -4,6 +4,13 @@ import { AccelerateParams, AccelerateResponse } from "./globals";
 import { Movement } from "./Movement";
 import { Player } from "./Player";
 
+export interface KeyMap {
+  left: boolean;
+  right: boolean;
+  up: boolean;
+  clicked: boolean;
+}
+
 export class GameInstance {
   public readonly player: Player;
 
@@ -13,7 +20,7 @@ export class GameInstance {
 
   #loopFunc: () => void;
 
-  public keyMap: Map<Movement, boolean>;
+  public keys: KeyMap;
 
   #changed: boolean = false;
 
@@ -36,7 +43,7 @@ export class GameInstance {
   constructor(
     player: Player,
     canvas: HTMLCanvasElement,
-    keyMap: Map<Movement, boolean>,
+    keyMap: KeyMap,
     entitites: Entity[],
     interactables: Entity[],
     computer: Computer,
@@ -45,7 +52,7 @@ export class GameInstance {
     this.player = player;
     this.#canvas = canvas;
     this.#ctx = canvas.getContext("2d");
-    this.keyMap = keyMap;
+    this.keys = keyMap;
     this.entities = entitites;
     this.interactables = interactables;
     this.#loopFunc = this.loop.bind(this);
@@ -107,13 +114,13 @@ export class GameInstance {
     if (this.#isPaused)
       return;
 
-    if (this.keyMap.get(Movement.RIGHT)) {
+    if (this.keys.right) {
       this.action(this.player.onRight());
-    } else if (this.keyMap.get(Movement.LEFT)) {
+    } else if (this.keys.left) {
       this.action(this.player.onLeft());
     }
 
-    if (this.keyMap.get(Movement.UP)) {
+    if (this.keys.up) {
       this.player.jump(this);
     }
 

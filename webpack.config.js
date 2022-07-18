@@ -16,18 +16,18 @@ const __dirname = path.dirname(__filename);
 const isDev = process.env.NODE_ENV !== 'production';
 /** @type {import("webpack").Configuration} */
 const browserConfig = {
-  entry: path.resolve(__dirname, "./src/ts/index.ts"),
+  entry: path.resolve(__dirname, "./src/ts/index.tsx"),
   mode: isDev ? 'development' : 'production',
   devtool: isDev ? "inline-source-map" : false,
   output: {
     path: path.resolve(__dirname, "./dist/static")
   },
   resolve: {
-    extensions: [".ts", ".d.ts", ".js"]
+    extensions: [".tsx", ".ts", ".js"]
   },
   module: {
     rules: [{
-      test: /\.d?ts/,
+      test: /\.d?tsx?/,
       loader: "babel-loader",
       exclude: /node_modules/,
     }, {

@@ -1,6 +1,6 @@
 import { AccelerateParams, GRAVITY, MessageType } from "./globals";
 import { Point } from "./Point";
-import { Direction } from "./index";
+import { Direction } from "./Direction";
 import { element } from "./element";
 import { GameInstance } from "./GameInstance";
 

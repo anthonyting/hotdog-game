@@ -8,5 +8,6 @@
       "DOM",
     ],
     "target": "ESNext",
+    "jsx": "react-jsx"
   }
 }

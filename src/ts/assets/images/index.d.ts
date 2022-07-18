@@ -1,9 +1,9 @@
 declare module "*.svg" {
-  const value: any;
-  export default value;
+  const url: string;
+  export default url;
 }
 
 declare module "*.jpg" {
-  const value: any;
-  export default value;
+  const url: string;
+  export default url;
 }
