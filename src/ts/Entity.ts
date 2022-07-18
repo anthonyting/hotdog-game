@@ -1,8 +1,8 @@
 import { AccelerateParams, GRAVITY, MessageType } from "./globals";
 import { Point } from "./Point";
 import { Direction } from "./Direction";
-import { element } from "./element";
 import { GameInstance } from "./GameInstance";
+import { element } from "./utils/dom-helper";
 
 export class Entity {
   public position: Point;
