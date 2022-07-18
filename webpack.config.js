@@ -1,6 +1,3 @@
-import {
-  CleanWebpackPlugin
-} from 'clean-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
@@ -20,7 +17,9 @@ const browserConfig = {
   mode: isDev ? 'development' : 'production',
   devtool: isDev ? "inline-source-map" : false,
   output: {
-    path: path.resolve(__dirname, "./dist/static")
+    filename: '[name].[contenthash].js',
+    path: path.resolve(__dirname, "./dist/static"),
+    clean: true,
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"]
@@ -40,7 +39,6 @@ const browserConfig = {
     }]
   },
   plugins: [
-    new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
       favicon: path.resolve(__dirname, "./src/ts/assets/images/favicon.ico"),
       template: 'src/html/index.html',
@@ -48,7 +46,9 @@ const browserConfig = {
     new webpack.DefinePlugin({
       USE_MULTIPLAYER: false,
     }),
-    new MiniCssExtractPlugin(),
+    new MiniCssExtractPlugin({
+      filename: '[name].[contenthash].css'
+    }),
   ],
   optimization: {
     splitChunks: {
