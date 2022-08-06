@@ -4,6 +4,8 @@ import { Direction } from "./Direction";
 import { GameInstance } from "./GameInstance";
 import { element } from "./utils/dom-helper";
 
+export type EntityId = number;
+
 export class Entity {
   public position: Point;
 
@@ -28,9 +30,9 @@ export class Entity {
 
   public readonly bufferedVelocity: Point = new Point(0, 0);
 
-  private static ENTITY_INCREMENT: number = 0;
+  private static ENTITY_INCREMENT: EntityId = 0;
 
-  public readonly id: number = Entity.ENTITY_INCREMENT++;
+  public readonly id: EntityId = Entity.ENTITY_INCREMENT++;
 
   static readonly ENTITY_MAP: Map<number, Entity> = new Map();
 
@@ -44,9 +46,9 @@ export class Entity {
 
   public visible: boolean = true;
 
-  public minimumY;
+  public minimumY: number;
 
-  public flying: boolean = false;
+  #flying: boolean = false;
 
   public text: HTMLCanvasElement = null;
 
@@ -74,14 +76,14 @@ export class Entity {
     const canvas = element("canvas", {
       width: this.width.toString(),
       height: this.height.toString(),
-    }) as HTMLCanvasElement;
+    });
     const ctx = canvas.getContext("2d");
     ctx.drawImage(image, 0, 0, this.width, this.height);
     this._image = canvas;
     const flippedCanvas = element("canvas", {
       width: this.width.toString(),
       height: this.height.toString(),
-    }) as HTMLCanvasElement;
+    });
     const flippedCtx = flippedCanvas.getContext("2d");
     flippedCtx.translate(canvas.width, 0);
     flippedCtx.scale(-1, 1);
@@ -98,6 +100,16 @@ export class Entity {
     return this._image;
   }
 
+  public startFlying() {
+    this.moving.x = false;
+    this.moving.y = false;
+    this.#flying = true;
+  }
+
+  public stopFlying() {
+    this.#flying = false;
+  }
+
   public jump(game: GameInstance) {
     if (this.moving.y)
       return;
@@ -105,6 +117,7 @@ export class Entity {
     this.time.y = 0;
     this.lastUpdate.y = window.performance.now();
     game.action(
+      this.id,
       {
         messageType: MessageType.yAccelerate,
         time: this.time.y,
@@ -120,13 +133,14 @@ export class Entity {
   }
 
   public startFalling(time: number, game: GameInstance) {
-    if (this.flying)
+    if (this.#flying)
       return;
     this.time.y = 0;
     this.lastUpdate.y = time;
     this.velocity.y = 0;
     this.moving.y = true;
     game.action(
+      this.id,
       {
         messageType: MessageType.yAccelerate,
         time: this.time.y,

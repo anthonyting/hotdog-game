@@ -1,21 +1,44 @@
+import { EntityId } from "./Entity";
 import { AccelerateParams, AccelerateResponse, MessageType } from "./globals";
 
 export class Computer {
-  #queued: AccelerateParams[] = [];
-  public queue(params: AccelerateParams) {
-    this.#queued.push(params);
+  #queued: Map<EntityId, AccelerateParams[]> = new Map();
+  #queueLength: number = 0;
+
+  public queue(entityId: EntityId, params: AccelerateParams) {
+    const entityQueue = this.#queued.get(entityId);
+    if (!entityQueue) {
+      this.#queued.set(entityId, [params]);
+    } else {
+      entityQueue.push(params);
+    }
+    this.#queueLength++;
+  }
+
+  public flushActions(entityId: EntityId) {
+    const entityQueue = this.#queued.get(entityId);
+    if (entityQueue) {
+      this.#queueLength -= entityQueue.length;
+      this.#queued.delete(entityId);
+    }
   }
 
   public execute(): AccelerateResponse[] {
-    if (!this.#queued.length) {
+    if (!this.#queueLength) {
       return [];
     }
 
-    const accelerated: AccelerateResponse[] = new Array(this.#queued.length);
-    for (let i = 0; i < this.#queued.length; i++) {
-      accelerated[i] = Computer.accelerate(this.#queued[i]);
+    const accelerated: AccelerateResponse[] = new Array(this.#queueLength);
+    const entityQueues = this.#queued.values();
+    let i = 0;
+    for (const queue of entityQueues) {
+      for (const param of queue) {
+        accelerated[i] = Computer.accelerate(param);
+        i++;
+      }
     }
-    this.#queued.length = 0;
+    this.#queued.clear();
+    this.#queueLength = 0;
     return accelerated;
   }
 

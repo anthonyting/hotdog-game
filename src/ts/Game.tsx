@@ -69,6 +69,7 @@ export const Game: React.FC<GameProps> = () => {
     const directionToMove = Math.sign(distance);
     if (Math.abs(distance - this.velocity.x) > playerRef.current.width) {
       gameRef.current.action(
+        this.id,
         directionToMove < 1 ? this.onRight() : this.onLeft(),
       );
       if (Math.random() < 0.005) {
@@ -136,7 +137,7 @@ export const Game: React.FC<GameProps> = () => {
         new Entity(platformImage, new Point(1250, 300), 1),
       ];
       interactables.forEach((entity) => {
-        entity.flying = true;
+        entity.startFlying();
       });
 
       const game = new GameInstance(
@@ -177,7 +178,7 @@ export const Game: React.FC<GameProps> = () => {
                   maximum: Infinity,
                   id: entity.id,
                 };
-                game.action(params);
+                game.action(entity.id, params);
               } else {
                 entity.moving.y = false;
               }
@@ -216,7 +217,7 @@ export const Game: React.FC<GameProps> = () => {
                   maximum: canvasRef.current.width - entity.width,
                   id: entity.id,
                 };
-                game.action(params);
+                game.action(entity.id, params);
               } else {
                 entity.moving.x = false;
                 entity.velocity.x = 0;
@@ -310,7 +311,8 @@ export const Game: React.FC<GameProps> = () => {
     const onTouchStart = (e: TouchEvent) => {
       playerRef.current.position.x = e.touches.item(0).pageX;
       playerRef.current.position.y = canvas.height - e.touches.item(0).pageY;
-      playerRef.current.flying = true;
+      playerRef.current.startFlying();
+      gameRef.current.computer.flushActions(playerRef.current.id);
       setKeys({ ...keys, clicked: true });
     };
     const onTouchMove = (e: TouchEvent) => {
@@ -322,7 +324,7 @@ export const Game: React.FC<GameProps> = () => {
       }
     };
     const onTouchEnd = (e: TouchEvent) => {
-      playerRef.current.flying = false;
+      playerRef.current.stopFlying();
       playerRef.current.startFalling(window.performance.now(), gameRef.current);
       setKeys({ ...keys, clicked: false });
     };
@@ -334,7 +336,8 @@ export const Game: React.FC<GameProps> = () => {
     const onMouseDown = (e: MouseEvent) => {
       playerRef.current.position.x = e.pageX;
       playerRef.current.position.y = canvas.height - e.pageY;
-      playerRef.current.flying = true;
+      playerRef.current.startFlying();
+      gameRef.current.computer.flushActions(playerRef.current.id);
       setKeys({ ...keys, clicked: true });
     };
     const onMouseMove = (e: MouseEvent) => {
@@ -346,7 +349,7 @@ export const Game: React.FC<GameProps> = () => {
       }
     };
     const onMouseUp = (e: MouseEvent) => {
-      playerRef.current.flying = false;
+      playerRef.current.stopFlying();
       playerRef.current.startFalling(window.performance.now(), gameRef.current);
       setKeys({ ...keys, clicked: false });
     };
@@ -364,7 +367,7 @@ export const Game: React.FC<GameProps> = () => {
       canvas.removeEventListener('mousemove', onMouseMove);
       canvas.removeEventListener('mouseup', onMouseUp);
     };
-  }, [keys.clicked]);
+  }, [keys]);
 
   return (
     <div>

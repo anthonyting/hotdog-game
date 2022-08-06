@@ -1,7 +1,6 @@
 import { Computer } from "./computer";
-import { Entity } from "./Entity";
+import { Entity, EntityId } from "./Entity";
 import { AccelerateParams, AccelerateResponse } from "./globals";
-import { Movement } from "./Movement";
 import { Player } from "./Player";
 
 export interface KeyMap {
@@ -32,9 +31,9 @@ export class GameInstance {
 
   #pauseTimestamp: number = 0;
 
-  #queuedMessages: AccelerateParams[] = [];
+  #queuedMessages: [EntityId, AccelerateParams][] = [];
 
-  #computer: Computer;
+  public readonly computer: Computer;
 
   #onAccelerateResponse: (response: AccelerateResponse) => void;
 
@@ -56,7 +55,7 @@ export class GameInstance {
     this.entities = entitites;
     this.interactables = interactables;
     this.#loopFunc = this.loop.bind(this);
-    this.#computer = computer;
+    this.computer = computer;
     this.#onAccelerateResponse = onAccelerateResponse;
   }
 
@@ -94,7 +93,7 @@ export class GameInstance {
       entity.lastUpdate.x += adjustment;
     });
     this.#queuedMessages.forEach((message) => {
-      this.action(message);
+      this.action(...message);
     });
     this.#queuedMessages.length = 0;
 
@@ -115,9 +114,9 @@ export class GameInstance {
       return;
 
     if (this.keys.right) {
-      this.action(this.player.onRight());
+      this.action(this.player.id, this.player.onRight());
     } else if (this.keys.left) {
-      this.action(this.player.onLeft());
+      this.action(this.player.id, this.player.onLeft());
     }
 
     if (this.keys.up) {
@@ -180,7 +179,7 @@ export class GameInstance {
       this.#changed = false;
     }
 
-    const executionResult = this.#computer.execute();
+    const executionResult = this.computer.execute();
     for (let i = 0; i < executionResult.length; i++) {
       this.#onAccelerateResponse(executionResult[i]);
     }
@@ -188,14 +187,14 @@ export class GameInstance {
     this.#animation = window.requestAnimationFrame(this.#loopFunc);
   }
 
-  public action(params: AccelerateParams) {
+  public action(entityId: EntityId, params: AccelerateParams) {
     if (params) {
       if (this.#isPaused) {
-        this.#queuedMessages.push(params);
+        this.#queuedMessages.push([entityId, params]);
       } else {
         // params.type = message;
         // worker.postMessage(params);
-        this.#computer.queue(params);
+        this.computer.queue(entityId, params);
       }
     }
   }
