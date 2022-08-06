@@ -1,8 +1,8 @@
-import { AccelerateParams, GRAVITY, MessageType } from "./globals";
-import { Point } from "./Point";
-import { Direction } from "./Direction";
-import { GameInstance } from "./GameInstance";
-import { element } from "./utils/dom-helper";
+import { AccelerateParams, GRAVITY, MessageType } from './globals';
+import { Point } from './Point';
+import { Direction } from './Direction';
+import { GameInstance } from './GameInstance';
+import { element } from './utils/dom-helper';
 
 export type EntityId = number;
 
@@ -13,11 +13,11 @@ export class Entity {
 
   public readonly width: number;
 
-  private _image: HTMLCanvasElement;
+  #image: HTMLCanvasElement;
 
-  static readonly hiddenImage: HTMLCanvasElement = element("canvas", {
-    width: "1",
-    height: "1",
+  static readonly hiddenImage: HTMLCanvasElement = element('canvas', {
+    width: '1',
+    height: '1',
   }) as HTMLCanvasElement;
 
   public readonly velocity: Point = new Point(0, 0);
@@ -26,7 +26,7 @@ export class Entity {
 
   public readonly lastUpdate: Point = new Point(0, 0);
 
-  public readonly moving: { x: boolean; y: boolean; } = { x: false, y: false };
+  public readonly moving: { x: boolean; y: boolean } = { x: false, y: false };
 
   public readonly bufferedVelocity: Point = new Point(0, 0);
 
@@ -34,6 +34,7 @@ export class Entity {
 
   public readonly id: EntityId = Entity.ENTITY_INCREMENT++;
 
+  // eslint-disable-next-line no-use-before-define
   static readonly ENTITY_MAP: Map<number, Entity> = new Map();
 
   public readonly speed: number;
@@ -68,23 +69,23 @@ export class Entity {
     scale: number,
     tick: (this: Entity) => void = null,
     speed: number = 0.6,
-    minimumY: number = 0
+    minimumY: number = 0,
   ) {
     this.position = position;
     this.width = Math.floor(image.width * scale);
     this.height = Math.floor(image.height * scale);
-    const canvas = element("canvas", {
+    const canvas = element('canvas', {
       width: this.width.toString(),
       height: this.height.toString(),
     });
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0, this.width, this.height);
-    this._image = canvas;
-    const flippedCanvas = element("canvas", {
+    this.#image = canvas;
+    const flippedCanvas = element('canvas', {
       width: this.width.toString(),
       height: this.height.toString(),
     });
-    const flippedCtx = flippedCanvas.getContext("2d");
+    const flippedCtx = flippedCanvas.getContext('2d');
     flippedCtx.translate(canvas.width, 0);
     flippedCtx.scale(-1, 1);
     flippedCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
@@ -97,7 +98,7 @@ export class Entity {
   }
 
   public get image(): HTMLCanvasElement {
-    return this._image;
+    return this.#image;
   }
 
   public startFlying() {
@@ -111,48 +112,40 @@ export class Entity {
   }
 
   public jump(game: GameInstance) {
-    if (this.moving.y)
-      return;
+    if (this.moving.y) return;
     this.moving.y = true;
     this.time.y = 0;
     this.lastUpdate.y = window.performance.now();
-    game.action(
-      this.id,
-      {
-        messageType: MessageType.yAccelerate,
-        time: this.time.y,
-        position: this.position.y,
-        timestep: 0.001,
-        velocity: 0.6,
-        acceleration: -GRAVITY,
-        minimum: this.minimumY,
-        maximum: Infinity,
-        id: this.id,
-      }
-    );
+    game.action(this.id, {
+      messageType: MessageType.yAccelerate,
+      time: this.time.y,
+      position: this.position.y,
+      timestep: 0.001,
+      velocity: 0.6,
+      acceleration: -GRAVITY,
+      minimum: this.minimumY,
+      maximum: Infinity,
+      id: this.id,
+    });
   }
 
   public startFalling(time: number, game: GameInstance) {
-    if (this.#flying)
-      return;
+    if (this.#flying) return;
     this.time.y = 0;
     this.lastUpdate.y = time;
     this.velocity.y = 0;
     this.moving.y = true;
-    game.action(
-      this.id,
-      {
-        messageType: MessageType.yAccelerate,
-        time: this.time.y,
-        position: this.position.y,
-        timestep: 0,
-        velocity: this.velocity.y,
-        acceleration: GRAVITY,
-        minimum: this.minimumY,
-        maximum: Infinity,
-        id: this.id,
-      }
-    );
+    game.action(this.id, {
+      messageType: MessageType.yAccelerate,
+      time: this.time.y,
+      position: this.position.y,
+      timestep: 0,
+      velocity: this.velocity.y,
+      acceleration: GRAVITY,
+      minimum: this.minimumY,
+      maximum: Infinity,
+      id: this.id,
+    });
   }
 
   public tick(game: GameInstance) {
@@ -164,14 +157,17 @@ export class Entity {
     }
   }
 
-  public onLeft(minimum: number = 0, acceleration = 0.001): AccelerateParams {
+  public onLeft(
+    minimum: number = 0,
+    acceleration = 0.001,
+  ): AccelerateParams | null {
     const maxVelocity = -this.speed;
     const wasMoving = this.moving.x;
-    this._image = this.imageFacingLeft;
+    this.#image = this.imageFacingLeft;
     this.facing = Direction.LEFT;
     if (wasMoving) {
       this.bufferedVelocity.x = maxVelocity;
-      return;
+      return null;
     }
 
     this.moving.x = true;
@@ -194,14 +190,17 @@ export class Entity {
     return null;
   }
 
-  public onRight(maximum: number = 10000, acceleration = -0.001): AccelerateParams {
+  public onRight(
+    maximum: number = 10000,
+    acceleration = -0.001,
+  ): AccelerateParams | null {
     const maxVelocity = this.speed;
     const wasMoving = this.moving.x;
-    this._image = this.imageFacingRight;
+    this.#image = this.imageFacingRight;
     this.facing = Direction.RIGHT;
     if (wasMoving) {
       this.bufferedVelocity.x = maxVelocity;
-      return;
+      return null;
     }
     this.moving.x = true;
     this.time.x = 0;
@@ -225,15 +224,15 @@ export class Entity {
 
   public hide() {
     this.visible = false;
-    this._image = Entity.hiddenImage;
+    this.#image = Entity.hiddenImage;
   }
 
   public show() {
     this.visible = true;
     if (this.velocity.x > 0) {
-      this._image = this.imageFacingRight;
+      this.#image = this.imageFacingRight;
     } else {
-      this._image = this.imageFacingLeft;
+      this.#image = this.imageFacingLeft;
     }
   }
 }

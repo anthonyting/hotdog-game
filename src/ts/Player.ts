@@ -1,5 +1,4 @@
-import { Entity } from "./Entity";
-
+import { Entity } from './Entity';
 
 export class Player extends Entity {
   public shooting: boolean = false;

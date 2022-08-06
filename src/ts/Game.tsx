@@ -1,10 +1,6 @@
 import './css/style.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { Background } from './components/Background';
-import hotdogImage from './assets/images/hot_dog.svg';
-import parkImage from './assets/images/park.jpg';
-import dogImage from './assets/images/dog.svg';
 import {
   useCallback,
   useEffect,
@@ -14,7 +10,6 @@ import {
   useState,
 } from 'react';
 import { debounce } from 'debounce';
-import { isMobileDevice, getImage } from './utils/helpers';
 import {
   Button,
   Form,
@@ -26,6 +21,11 @@ import {
   ModalFooter,
   ModalHeader,
 } from 'reactstrap';
+import { Background } from './components/Background';
+import hotdogImage from './assets/images/hot_dog.svg';
+import parkImage from './assets/images/park.jpg';
+import dogImage from './assets/images/dog.svg';
+import { isMobileDevice, getImage } from './utils/helpers';
 import { Player } from './Player';
 import { Point } from './Point';
 import { Entity } from './Entity';
@@ -147,7 +147,7 @@ export const Game: React.FC<GameProps> = () => {
         entities,
         interactables,
         computer,
-        function (this: GameInstance, response) {
+        function onAccelerateResponse(this: GameInstance, response) {
           const now = window.performance.now();
           const entity = Entity.ENTITY_MAP.get(response.id);
           if (!entity) {
@@ -185,7 +185,7 @@ export const Game: React.FC<GameProps> = () => {
 
               entity.lastUpdate.y = now;
               break;
-            case MessageType.xAccelerate:
+            case MessageType.xAccelerate: {
               entity.position.x = response.position;
 
               const bufferedVelocity = entity.bufferedVelocity.x;
@@ -225,6 +225,7 @@ export const Game: React.FC<GameProps> = () => {
 
               entity.lastUpdate.x = now;
               break;
+            }
             default:
               console.log(`unhandled: `, response);
           }
@@ -272,6 +273,8 @@ export const Game: React.FC<GameProps> = () => {
           playerRef.current.shooting = true;
           gameRef.current.setChanged();
           break;
+        default:
+          break;
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -289,6 +292,8 @@ export const Game: React.FC<GameProps> = () => {
           break;
         case ' ':
           setKeys({ ...keys, up: false });
+          break;
+        default:
           break;
       }
     };

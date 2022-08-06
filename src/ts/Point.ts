@@ -13,6 +13,11 @@ export class Point {
   }
 
   equals(position: Point) {
-    return position && this.x == position.x && this.y == position.y;
+    return position && this.x === position.x && this.y === position.y;
+  }
+
+  add(x: number, y: number) {
+    this.x += x;
+    this.y += y;
   }
 }

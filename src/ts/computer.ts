@@ -1,8 +1,9 @@
-import { EntityId } from "./Entity";
-import { AccelerateParams, AccelerateResponse, MessageType } from "./globals";
+import { EntityId } from './Entity';
+import { AccelerateParams, AccelerateResponse, MessageType } from './globals';
 
 export class Computer {
   #queued: Map<EntityId, AccelerateParams[]> = new Map();
+
   #queueLength: number = 0;
 
   public queue(entityId: EntityId, params: AccelerateParams) {
@@ -42,10 +43,21 @@ export class Computer {
     return accelerated;
   }
 
-  private static accelerate({ messageType, time, position, timestep, velocity, acceleration, minimum, maximum, id }: AccelerateParams): AccelerateResponse {
-    const new_position = position + (timestep * (velocity + (timestep * acceleration) / 2.0));
+  private static accelerate({
+    messageType,
+    time,
+    position,
+    timestep,
+    velocity,
+    acceleration,
+    minimum,
+    maximum,
+    id,
+  }: AccelerateParams): AccelerateResponse {
+    const newPosition =
+      position + timestep * (velocity + (timestep * acceleration) / 2.0);
 
-    if (new_position <= minimum) {
+    if (newPosition <= minimum) {
       return {
         messageType,
         time: 0,
@@ -55,7 +67,7 @@ export class Computer {
       };
     }
 
-    if (new_position >= maximum) {
+    if (newPosition >= maximum) {
       return {
         messageType,
         time: 0,
@@ -68,10 +80,9 @@ export class Computer {
     return {
       messageType,
       time: time + timestep,
-      position: new_position,
-      velocity: velocity + (timestep * acceleration),
+      position: newPosition,
+      velocity: velocity + timestep * acceleration,
       id,
     };
   }
-
 }

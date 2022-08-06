@@ -1,24 +1,26 @@
 export default {
-  "presets": [
-    ["@babel/preset-react",
+  presets: [
+    [
+      '@babel/preset-react',
       {
-        "flow": false,
-        "typescript": true,
-        "runtime": "automatic"
+        flow: false,
+        typescript: true,
+        runtime: 'automatic',
       },
     ],
     [
-      "@babel/preset-typescript", {
-        "isTSX": true,
-        "allExtensions": true,
-      }
+      '@babel/preset-typescript',
+      {
+        isTSX: true,
+        allExtensions: true,
+      },
     ],
     [
-      "@babel/preset-env",
+      '@babel/preset-env',
       {
-        "useBuiltIns": "entry",
-        "corejs": "3.22"
-      }
-    ]
+        useBuiltIns: 'entry',
+        corejs: '3.22',
+      },
+    ],
   ],
 };

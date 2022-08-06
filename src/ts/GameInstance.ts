@@ -1,7 +1,7 @@
-import { Computer } from "./computer";
-import { Entity, EntityId } from "./Entity";
-import { AccelerateParams, AccelerateResponse } from "./globals";
-import { Player } from "./Player";
+import { Computer } from './computer';
+import { Entity, EntityId } from './Entity';
+import { AccelerateParams, AccelerateResponse } from './globals';
+import { Player } from './Player';
 
 export interface KeyMap {
   left: boolean;
@@ -50,7 +50,7 @@ export class GameInstance {
   ) {
     this.player = player;
     this.#canvas = canvas;
-    this.#ctx = canvas.getContext("2d");
+    this.#ctx = canvas.getContext('2d');
     this.keys = keyMap;
     this.entities = entitites;
     this.interactables = interactables;
@@ -79,8 +79,7 @@ export class GameInstance {
   }
 
   public play() {
-    if (!this.#isPaused)
-      return;
+    if (!this.#isPaused) return;
 
     this.#isPaused = false;
 
@@ -89,8 +88,7 @@ export class GameInstance {
     this.player.lastUpdate.y += adjustment;
     this.player.lastUpdate.x += adjustment;
     this.entities.forEach((entity) => {
-      entity.lastUpdate.y += adjustment;
-      entity.lastUpdate.x += adjustment;
+      entity.lastUpdate.add(adjustment, adjustment);
     });
     this.#queuedMessages.forEach((message) => {
       this.action(...message);
@@ -101,8 +99,7 @@ export class GameInstance {
   }
 
   public pause() {
-    if (this.#isPaused)
-      return;
+    if (this.#isPaused) return;
 
     this.#isPaused = true;
     this.#pauseTimestamp = window.performance.now();
@@ -110,8 +107,7 @@ export class GameInstance {
   }
 
   private loop() {
-    if (this.#isPaused)
-      return;
+    if (this.#isPaused) return;
 
     if (this.keys.right) {
       this.action(this.player.id, this.player.onRight());
@@ -131,18 +127,19 @@ export class GameInstance {
         if (
           // right side
           this.player.position.x + this.player.width <=
-          entity.position.x + entity.width &&
+            entity.position.x + entity.width &&
           // left side
           entity.position.x <= this.player.position.x &&
           // player above
-          this.player.position.y >= entity.position.y + entity.height) {
+          this.player.position.y >= entity.position.y + entity.height
+        ) {
           changedMinimumY = true;
           this.player.minimumY = entity.position.y + entity.height;
         }
         this.#ctx.drawImage(
           entity.image,
           Math.floor(entity.position.x),
-          Math.floor(this.#canvas.height - entity.position.y - entity.height)
+          Math.floor(this.#canvas.height - entity.position.y - entity.height),
         );
       });
       if (!changedMinimumY) {
@@ -151,7 +148,7 @@ export class GameInstance {
       this.entities.forEach((entity) => {
         const x = Math.floor(entity.position.x);
         const y = Math.floor(
-          this.#canvas.height - entity.position.y - entity.height
+          this.#canvas.height - entity.position.y - entity.height,
         );
         this.#ctx.drawImage(entity.image, x, y);
         entity.tick(this);
@@ -159,20 +156,20 @@ export class GameInstance {
           this.#ctx.drawImage(
             entity.text,
             x,
-            y - entity.height - entity.text.height
+            y - entity.height - entity.text.height,
           );
         }
       });
       const x = Math.floor(this.player.position.x);
       const y = Math.floor(
-        this.#canvas.height - this.player.position.y - this.player.height
+        this.#canvas.height - this.player.position.y - this.player.height,
       );
       this.#ctx.drawImage(this.player.image, x, y);
       if (this.player.text) {
         this.#ctx.drawImage(
           this.player.text,
           x,
-          y - this.player.height - this.player.text.height
+          y - this.player.height - this.player.text.height,
         );
       }
       this.player.tick(this);
