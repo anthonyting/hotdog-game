@@ -25,6 +25,7 @@ import { Background } from './components/Background';
 import hotdogImage from './assets/images/hot_dog.svg';
 import parkImage from './assets/images/park.jpg';
 import dogImage from './assets/images/dog.svg';
+import beeImage from './assets/images/bee.png';
 import { isMobileDevice, getImage } from './utils/helpers';
 import { Player } from './Player';
 import { Point } from './Point';
@@ -106,19 +107,27 @@ export const Game: React.FC<GameProps> = () => {
       const gap = canvasSize.width / 10;
       const heightGap = canvasSize.height / 10;
       const loadedDogImage = await getImage(dogImage);
+      const loadedBeeImage = await getImage(beeImage);
       for (let i = 0, j = 0; i < canvasSize.width; i += gap, j += heightGap) {
-        const speed = Math.max(
-          0.1,
-          Math.min(Math.random() * 0.4, player.speed),
-        );
-        entities.push(
-          new Entity(
-            loadedDogImage,
+        const entityCreator = (image: HTMLImageElement, scale: number) => {
+          const speed = Math.max(
+            0.1,
+            Math.min(Math.random() * 0.4, player.speed),
+          );
+          return new Entity(
+            image,
             new Point(i, canvasSize.height - j),
-            1,
+            scale,
             dogLogic,
             speed,
-          ),
+          );
+        };
+
+        entities.push(
+          ...[
+            entityCreator(loadedDogImage, 1),
+            entityCreator(loadedBeeImage, 0.1),
+          ],
         );
       }
 

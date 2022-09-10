@@ -31,7 +31,7 @@ const browserConfig = {
         exclude: /node_modules/,
       },
       {
-        test: /\.(svg|jpg)/,
+        test: /\.(svg|jpg|png)/,
         type: 'asset/resource',
         exclude: /node_modules/,
       },
