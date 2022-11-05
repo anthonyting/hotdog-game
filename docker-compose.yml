@@ -1,6 +1,6 @@
-version: "3.8"
-services: 
+version: '3.8'
+services:
   server:
     build: ./
-    ports: 
+    ports:
       - 3000:3000
