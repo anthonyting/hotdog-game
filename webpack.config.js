@@ -22,6 +22,9 @@ const browserConfig = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    alias: {
+      assets: path.resolve(__dirname, 'src/ts/assets'),
+    },
   },
   module: {
     rules: [

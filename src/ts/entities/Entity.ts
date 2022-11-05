@@ -1,17 +1,24 @@
-import { AccelerateParams, GRAVITY, MessageType } from './globals';
-import { Point } from './Point';
-import { Direction } from './Direction';
-import { GameInstance } from './GameInstance';
-import { element } from './utils/dom-helper';
+/* eslint-disable no-underscore-dangle */
+import { AccelerateParams, GRAVITY, MessageType } from '../globals';
+import { Point } from '../Point';
+import { Direction } from '../Direction';
+import type { GameInstance } from '../GameInstance';
+import { element } from '../utils/dom-helper';
 
 export type EntityId = number;
 
-export class Entity {
+type EntityEventType = 'load' | 'error';
+interface EntityCallbacks {
+  load: () => void;
+  error: (err: unknown) => void;
+}
+
+export abstract class Entity {
   public position: Point;
 
-  public readonly height: number;
+  #height: number;
 
-  public readonly width: number;
+  #width: number;
 
   #image: HTMLCanvasElement;
 
@@ -39,9 +46,9 @@ export class Entity {
 
   public readonly speed: number;
 
-  private readonly imageFacingLeft: HTMLCanvasElement;
+  #imageFacingLeft: HTMLCanvasElement;
 
-  private readonly imageFacingRight: HTMLCanvasElement;
+  #imageFacingRight: HTMLCanvasElement;
 
   public facing: Direction = Direction.LEFT;
 
@@ -53,48 +60,99 @@ export class Entity {
 
   public text: HTMLCanvasElement = null;
 
-  #tick: () => void = null;
+  #loaded: boolean;
+
+  #errored: unknown;
+
+  #onload?: () => void = null;
+
+  #onerror?: (err: unknown) => void = null;
 
   /**
    *
    * @param image assumed to be facing left
    * @param position
    * @param scale
-   * @param tick
    * @param speed
    */
   constructor(
-    image: HTMLImageElement | HTMLCanvasElement,
+    image: Promise<HTMLImageElement> | HTMLCanvasElement,
     position: Point,
     scale: number,
-    tick: (this: Entity) => void = null,
     speed: number = 0.6,
     minimumY: number = 0,
   ) {
     this.position = position;
-    this.width = Math.floor(image.width * scale);
-    this.height = Math.floor(image.height * scale);
+    Entity.ENTITY_MAP.set(this.id, this);
+    this.speed = speed;
+    this.minimumY = minimumY;
+    if (image instanceof HTMLCanvasElement) {
+      this.load(image, scale);
+    } else {
+      image
+        .then((element) => this.load(element, scale))
+        .catch((err) => {
+          this.#errored = err;
+          if (this.#onerror) {
+            this.#onerror(err);
+          }
+        });
+    }
+  }
+
+  addEventListener<T extends EntityEventType, K extends EntityCallbacks[T]>(
+    type: T,
+    cb: K,
+  ) {
+    switch (type) {
+      case 'load':
+        this.#onload = cb as EntityCallbacks['load'];
+        break;
+      case 'error':
+        this.#onerror = cb as EntityCallbacks['error'];
+        break;
+      default:
+        break;
+    }
+  }
+
+  waitForLoad(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.#loaded) {
+        resolve();
+      } else if (this.#errored) {
+        reject(this.#errored);
+      } else {
+        this.addEventListener('load', () => resolve());
+        this.addEventListener('error', reject);
+      }
+    });
+  }
+
+  load(image: HTMLImageElement | HTMLCanvasElement, scale: number) {
+    this.#width = Math.floor(image.width * scale);
+    this.#height = Math.floor(image.height * scale);
     const canvas = element('canvas', {
-      width: this.width.toString(),
+      width: this.#width.toString(),
       height: this.height.toString(),
     });
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(image, 0, 0, this.width, this.height);
+    ctx.drawImage(image, 0, 0, this.#width, this.#height);
     this.#image = canvas;
     const flippedCanvas = element('canvas', {
-      width: this.width.toString(),
-      height: this.height.toString(),
+      width: this.#width.toString(),
+      height: this.#height.toString(),
     });
     const flippedCtx = flippedCanvas.getContext('2d');
     flippedCtx.translate(canvas.width, 0);
     flippedCtx.scale(-1, 1);
     flippedCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
-    this.imageFacingLeft = canvas;
-    this.imageFacingRight = flippedCanvas;
-    Entity.ENTITY_MAP.set(this.id, this);
-    this.#tick = tick ? tick.bind(this) : null;
-    this.speed = speed;
-    this.minimumY = minimumY;
+    this.#imageFacingLeft = canvas;
+    this.#imageFacingRight = flippedCanvas;
+    if (this.#onload) {
+      this.#onload();
+    }
+    this.#loaded = true;
   }
 
   public get image(): HTMLCanvasElement {
@@ -148,9 +206,12 @@ export class Entity {
     });
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  protected _tick(game: GameInstance): void {}
+
   public tick(game: GameInstance) {
-    if (this.#tick) {
-      this.#tick();
+    if (this._tick) {
+      this._tick(game);
     }
     if (this.position.y > this.minimumY && !this.moving.y) {
       this.startFalling(window.performance.now(), game);
@@ -163,7 +224,7 @@ export class Entity {
   ): AccelerateParams | null {
     const maxVelocity = -this.speed;
     const wasMoving = this.moving.x;
-    this.#image = this.imageFacingLeft;
+    this.#image = this.#imageFacingLeft;
     this.facing = Direction.LEFT;
     if (wasMoving) {
       this.bufferedVelocity.x = maxVelocity;
@@ -196,7 +257,7 @@ export class Entity {
   ): AccelerateParams | null {
     const maxVelocity = this.speed;
     const wasMoving = this.moving.x;
-    this.#image = this.imageFacingRight;
+    this.#image = this.#imageFacingRight;
     this.facing = Direction.RIGHT;
     if (wasMoving) {
       this.bufferedVelocity.x = maxVelocity;
@@ -230,9 +291,17 @@ export class Entity {
   public show() {
     this.visible = true;
     if (this.velocity.x > 0) {
-      this.#image = this.imageFacingRight;
+      this.#image = this.#imageFacingRight;
     } else {
-      this.#image = this.imageFacingLeft;
+      this.#image = this.#imageFacingLeft;
     }
+  }
+
+  public get width(): number {
+    return this.#width;
+  }
+
+  public get height(): number {
+    return this.#height;
   }
 }

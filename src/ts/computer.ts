@@ -1,4 +1,4 @@
-import { EntityId } from './Entity';
+import { EntityId } from './entities/Entity';
 import { AccelerateParams, AccelerateResponse, MessageType } from './globals';
 
 export class Computer {

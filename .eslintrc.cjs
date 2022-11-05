@@ -23,5 +23,6 @@ module.exports = {
     'no-undef': 'off',
     'import/no-unresolved': 'off',
     'no-plusplus': 'off',
+    'no-underscore-dangle': 'off',
   },
 };

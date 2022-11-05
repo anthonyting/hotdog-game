@@ -21,18 +21,19 @@ import {
   ModalFooter,
   ModalHeader,
 } from 'reactstrap';
+import hotdogImage from 'assets/images/hot_dog.svg';
+import parkImage from 'assets/images/park.jpg';
 import { Background } from './components/Background';
-import hotdogImage from './assets/images/hot_dog.svg';
-import parkImage from './assets/images/park.jpg';
-import dogImage from './assets/images/dog.svg';
-import beeImage from './assets/images/bee.png';
 import { isMobileDevice, getImage } from './utils/helpers';
-import { Player } from './Player';
+import { Player } from './entities/Player';
 import { Point } from './Point';
-import { Entity } from './Entity';
+import { Entity } from './entities/Entity';
 import { GameInstance, KeyMap } from './GameInstance';
 import { Computer } from './computer';
 import { AccelerateParams, GRAVITY, MessageType } from './globals';
+import { Dog } from './entities/Dog';
+import { Platform } from './entities/Platform';
+import { Bee } from './entities/Bee';
 
 interface GameProps {}
 
@@ -65,20 +66,6 @@ export const Game: React.FC<GameProps> = () => {
 
   const isMobile = useMemo(() => isMobileDevice(), []);
 
-  const dogLogic = useCallback(function (this: Entity) {
-    const distance = this.position.x - playerRef.current.position.x;
-    const directionToMove = Math.sign(distance);
-    if (Math.abs(distance - this.velocity.x) > playerRef.current.width) {
-      gameRef.current.action(
-        this.id,
-        directionToMove < 1 ? this.onRight() : this.onLeft(),
-      );
-      if (Math.random() < 0.005) {
-        this.jump(gameRef.current);
-      }
-    }
-  }, []);
-
   useLayoutEffect(() => {
     const onSizeUpdate = debounce(() => {
       setCanvasSize({
@@ -95,59 +82,47 @@ export const Game: React.FC<GameProps> = () => {
 
   useEffect(() => {
     const initialize = async () => {
-      const loadedHotDog = await getImage(hotdogImage);
-      const player = new Player(
-        loadedHotDog,
-        new Point(0, canvasSize.height),
-        0.1,
-      );
+      const player = new Player(new Point(0, canvasSize.height));
       playerRef.current = player;
 
-      const entities = [];
+      const dogs: Dog[] = [];
+      const bees: Bee[] = [];
       const gap = canvasSize.width / 10;
       const heightGap = canvasSize.height / 10;
-      const loadedDogImage = await getImage(dogImage);
-      const loadedBeeImage = await getImage(beeImage);
       for (let i = 0, j = 0; i < canvasSize.width; i += gap, j += heightGap) {
-        const entityCreator = (image: HTMLImageElement, scale: number) => {
-          const speed = Math.max(
-            0.1,
-            Math.min(Math.random() * 0.4, player.speed),
-          );
-          return new Entity(
-            image,
-            new Point(i, canvasSize.height - j),
-            scale,
-            dogLogic,
-            speed,
-          );
-        };
-
-        entities.push(
-          ...[
-            entityCreator(loadedDogImage, 1),
-            entityCreator(loadedBeeImage, 0.1),
-          ],
+        const dogSpeed = Math.max(
+          0.1,
+          Math.min(Math.random() * 0.4, player.speed),
         );
+
+        const beeSpeed = new Point(
+          Math.max(0.001, Math.random() * 0.6),
+          Math.max(0.001, Math.random() * 0.6),
+        );
+
+        bees.push(new Bee(new Point(i, canvasSize.height - j), beeSpeed));
+        dogs.push(new Dog(new Point(i, canvasSize.height - j), dogSpeed));
       }
 
-      const platformImage = document.createElement('canvas');
-      const platformContext = platformImage.getContext('2d');
-      platformContext.beginPath();
-      platformContext.moveTo(0, 0);
-      platformContext.lineWidth = 50;
-      platformContext.lineTo(500, 0);
-      platformContext.stroke();
-
       const interactables = [
-        new Entity(platformImage, new Point(-50, 8), 1),
-        new Entity(platformImage, new Point(750, 100), 1),
-        new Entity(platformImage, new Point(1000, 200), 1),
-        new Entity(platformImage, new Point(1250, 300), 1),
+        new Platform(new Point(-50, 8)),
+        new Platform(new Point(750, 100)),
+        new Platform(new Point(1000, 200)),
+        new Platform(new Point(1250, 300)),
       ];
       interactables.forEach((entity) => {
         entity.startFlying();
       });
+
+      const entities = [...bees, ...dogs];
+
+      await Promise.all(
+        [player.waitForLoad()]
+          .concat(entities.map((entity) => entity.waitForLoad()))
+          .concat(
+            interactables.map((interactable) => interactable.waitForLoad()),
+          ),
+      );
 
       const game = new GameInstance(
         player,
@@ -166,11 +141,13 @@ export const Game: React.FC<GameProps> = () => {
           game.setChanged();
 
           switch (response.messageType) {
-            case MessageType.yAccelerate:
-              entity.position.y = response.position;
-              entity.velocity.y = response.velocity;
-              entity.time.y = response.time;
+            case MessageType.yAccelerate: {
+              const bufferedVelocity = entity.bufferedVelocity.y;
 
+              entity.position.y = response.position;
+              entity.velocity.y = bufferedVelocity || response.velocity;
+              entity.bufferedVelocity.y = 0;
+              entity.time.y = response.time;
               if (entity.position.y > entity.minimumY) {
                 if (this.keys.clicked && entity.id === player.id) {
                   entity.moving.y = false;
@@ -194,6 +171,7 @@ export const Game: React.FC<GameProps> = () => {
 
               entity.lastUpdate.y = now;
               break;
+            }
             case MessageType.xAccelerate: {
               entity.position.x = response.position;
 
@@ -393,18 +371,13 @@ export const Game: React.FC<GameProps> = () => {
             onSubmit={(e) => {
               e.preventDefault();
 
-              getImage(dogImage).then((image) => {
-                gameRef.current.entities.push(
-                  new Entity(
-                    image,
-                    new Point(canvasSize.width / 2, canvasSize.height),
-                    1,
-                    dogLogic,
-                    Number(spawnDogInput),
-                  ),
-                );
-                setIsPaused(false);
-              });
+              gameRef.current.entities.push(
+                new Dog(
+                  new Point(canvasSize.width / 2, canvasSize.height),
+                  Number(spawnDogInput),
+                ),
+              );
+              setIsPaused(false);
             }}
           >
             <FormGroup>

@@ -7,5 +7,6 @@
     "lib": ["DOM"],
     "target": "ESNext",
     "jsx": "react-jsx"
-  }
+  },
+  "include": ["src/ts/**/*"]
 }

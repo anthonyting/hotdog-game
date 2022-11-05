@@ -1,7 +1,7 @@
-import { Computer } from './computer';
-import { Entity, EntityId } from './Entity';
-import { AccelerateParams, AccelerateResponse } from './globals';
-import { Player } from './Player';
+import type { Computer } from './computer';
+import type { Entity, EntityId } from './entities/Entity';
+import type { AccelerateParams, AccelerateResponse } from './globals';
+import type { Player } from './entities/Player';
 
 export interface KeyMap {
   left: boolean;
@@ -124,12 +124,16 @@ export class GameInstance {
 
       let changedMinimumY = false;
       this.interactables.forEach((entity) => {
+        // allow extra 90% off the edge, so it doesn't seem like player is falling through
+        const rightWidthAdjustment = 0.1;
+        const leftWidthAdjustment = 1 - rightWidthAdjustment;
         if (
           // right side
-          this.player.position.x + this.player.width <=
+          this.player.position.x + this.player.width * rightWidthAdjustment <=
             entity.position.x + entity.width &&
           // left side
-          entity.position.x <= this.player.position.x &&
+          entity.position.x <=
+            this.player.position.x + this.player.width * leftWidthAdjustment &&
           // player above
           this.player.position.y >= entity.position.y + entity.height
         ) {
@@ -184,7 +188,7 @@ export class GameInstance {
     this.#animation = window.requestAnimationFrame(this.#loopFunc);
   }
 
-  public action(entityId: EntityId, params: AccelerateParams) {
+  public action(entityId: EntityId, params?: AccelerateParams) {
     if (params) {
       if (this.#isPaused) {
         this.#queuedMessages.push([entityId, params]);

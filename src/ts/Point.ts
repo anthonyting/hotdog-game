@@ -20,4 +20,8 @@ export class Point {
     this.x += x;
     this.y += y;
   }
+
+  distance(position: Point) {
+    return new Point(this.x - position.x, this.y - position.y);
+  }
 }
