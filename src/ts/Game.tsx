@@ -416,6 +416,8 @@ export const Game: React.FC<GameProps> = () => {
           <Button
             onTouchStart={() => setKeys({ ...keys, left: true })}
             onTouchEnd={() => setKeys({ ...keys, left: false })}
+            onMouseDown={() => setKeys({ ...keys, left: true })}
+            onMouseUp={() => setKeys({ ...keys, left: false })}
           >
             LEFT
           </Button>
@@ -425,6 +427,8 @@ export const Game: React.FC<GameProps> = () => {
           <Button
             onTouchStart={() => setKeys({ ...keys, right: true })}
             onTouchEnd={() => setKeys({ ...keys, right: false })}
+            onMouseDown={() => setKeys({ ...keys, right: true })}
+            onMouseUp={() => setKeys({ ...keys, right: false })}
           >
             RIGHT
           </Button>
